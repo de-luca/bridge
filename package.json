@@ -1,0 +1,20 @@
+{
+  "name": "bridge",
+  "version": "0.1.0",
+  "main": "src/index.ts",
+  "files": [
+    "src/"
+  ],
+  "license": "AGPL-3.0-or-later",
+  "scripts": {
+    "build": "tsc",
+    "build:check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/simple-peer-light": "npm:@types/simple-peer",
+    "typescript": "^5.1.6"
+  },
+  "dependencies": {
+    "simple-peer-light": "^9.10.0"
+  }
+}

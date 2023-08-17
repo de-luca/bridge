@@ -1,0 +1,19 @@
+{
+	"compilerOptions": {
+		"target": "ES2020",
+		"module": "ESNext",
+		"sourceMap": true,
+		"declaration": true,
+		"outDir": "./lib",
+		"strict": true,
+		"allowSyntheticDefaultImports": true,
+		"moduleResolution": "NodeNext",
+		"lib": [
+			"dom",
+			"esnext",
+		]
+	},
+	"include": [
+		"src/**/*.ts"
+	]
+}

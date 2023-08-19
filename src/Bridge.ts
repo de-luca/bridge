@@ -2,13 +2,13 @@ import { Beacon } from "./Beacon";
 import { SignalData } from "./response";
 import Peer, { Instance } from 'simple-peer-light';
 
-type SelfHandler = () => void;
-type PeerHandler = (peerId: string) => void;
+export type SelfHandler = () => void;
+export type PeerHandler = (peerId: string) => void;
 
-type ActionSender<T> = (data: T, ...peers: Array<string>) => void;
-type ActionReceiver<T> = (data: T, peerId: string) => void;
-type ActionReceiverSetter<T> = (handler: ActionReceiver<T>) => void;
-type ActionDuplex<T> = [ActionSender<T>, ActionReceiverSetter<T>];
+export type ActionSender<T> = (data: T, ...peers: Array<string>) => void;
+export type ActionReceiver<T> = (data: T, peerId: string) => void;
+export type ActionReceiverSetter<T> = (handler: ActionReceiver<T>) => void;
+export type ActionDuplex<T> = [ActionSender<T>, ActionReceiverSetter<T>];
 
 interface Payload {
 	action: string;

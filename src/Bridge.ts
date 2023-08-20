@@ -16,55 +16,55 @@ interface Payload {
 }
 
 export class Bridge<T = undefined> {
-	#beacon: Beacon<T>;
+	private beacon: Beacon<T>;
 
-	#ready: Promise<void>;
-	#you?: string;
-	#room?: string;
-	#data?: T;
+	private _ready: Promise<void>;
+	private _you?: string;
+	private _room?: string;
+	private _data?: T;
 
-	#peers: Map<string, Instance> = new Map();
-	#actions: Map<string, ActionReceiver<any>> = new Map();
+	private _peers: Map<string, Instance> = new Map();
+	private _actions: Map<string, ActionReceiver<any>> = new Map();
 
-	#onJoin: SelfHandler = () => {};
-	#onLeave: SelfHandler = () => {};
-	#onPeerJoin: PeerHandler = () => {};
-	#onPeerLeave: PeerHandler = () => {};
+	private _onJoin: SelfHandler = () => {};
+	private _onLeave: SelfHandler = () => {};
+	private _onPeerJoin: PeerHandler = () => {};
+	private _onPeerLeave: PeerHandler = () => {};
 
 	public constructor(beacon: Beacon<T>) {
-		this.#beacon = beacon;
+		this.beacon = beacon;
 
-		this.#beacon.addEventListener('signal', ev => this.handleSignal(ev.detail));
+		this.beacon.addEventListener('signal', ev => this.handleSignal(ev.detail));
 
-		this.#ready = new Promise((res, rej) => {
+		this._ready = new Promise((res, rej) => {
 			const onOpen = () => {
-				this.#beacon.removeEventListener('error', onError);
+				this.beacon.removeEventListener('error', onError);
 				res();
 			};
 			const onError = () => {
-				this.#beacon.removeEventListener('open', onOpen);
+				this.beacon.removeEventListener('open', onOpen);
 				rej();
 			};
 
-			this.#beacon.addEventListener("open", onOpen, { once: true });
-			this.#beacon.addEventListener("error", onError, { once: true });
+			this.beacon.addEventListener("open", onOpen, { once: true });
+			this.beacon.addEventListener("error", onError, { once: true });
 		});
 	}
 
 	public get ready() {
-		return this.#ready;
+		return this._ready;
 	}
 
 	public get you() {
-		return this.#you;
+		return this._you;
 	}
 
 	public get room() {
-		return this.#room;
+		return this._room;
 	}
 
 	public get data() {
-		return this.#data;
+		return this._data;
 	}
 
 	public static withBeacon<T>(url: string): Bridge<T> {
@@ -74,37 +74,37 @@ export class Bridge<T = undefined> {
 	private addPeer(peerId: string, initiator: boolean): Instance {
 		const peer = new Peer({ initiator });
 
-		peer.once('connect', () => this.#onPeerJoin(peerId));
-		peer.once('error', () => this.#peers.delete(peerId));
+		peer.once('connect', () => this._onPeerJoin(peerId));
+		peer.once('error', () => this._peers.delete(peerId));
 		peer.once('close', () => {
-			this.#onPeerLeave(peerId);
-			this.#peers.delete(peerId);
+			this._onPeerLeave(peerId);
+			this._peers.delete(peerId);
 		});
 
-		peer.on('signal', data => this.#beacon.signal(peerId, data));
+		peer.on('signal', data => this.beacon.signal(peerId, data));
 		peer.on('data', data => this.handleData(peerId, data));
 
-		this.#peers.set(peerId, peer);
+		this._peers.set(peerId, peer);
 
 		return peer;
 	}
 
 	private handleSignal(signalData: SignalData) {
-		if (!this.#peers.has(signalData.peer)) {
+		if (!this._peers.has(signalData.peer)) {
 			return this.addPeer(signalData.peer, false).signal(signalData.data);
 		}
 
-		this.#peers.get(signalData.peer)!.signal(signalData.data)
+		this._peers.get(signalData.peer)!.signal(signalData.data)
 	}
 
 	private handleData(peer: string, data: string) {
 		const payload: Payload = JSON.parse(data);
-		this.#actions.get(payload.action)?.(payload.data, peer);
+		this._actions.get(payload.action)?.(payload.data, peer);
 	}
 
 	private sendData(action: string, data: any, peers: Array<string>) {
 		const payload = JSON.stringify({ action, data });
-		this.#peers.forEach((peer, id) => {
+		this._peers.forEach((peer, id) => {
 			if (peers.length === 0 || peers.includes(id)) {
 				peer.send(payload);
 			}
@@ -112,18 +112,18 @@ export class Bridge<T = undefined> {
 	}
 
 	public create(data: T) {
-		this.#data = data;
-		return this.#beacon.create(data);
+		this._data = data;
+		return this.beacon.create(data);
 	}
 
 	public getInfo(room: string) {
-		return this.#beacon.getInfo(room);
+		return this.beacon.getInfo(room);
 	}
 
 	public async join(room: string) {
-		const data = await this.#beacon.join(room);
-		this.#you = data.you;
-		this.#data = data.data;
+		const data = await this.beacon.join(room);
+		this._you = data.you;
+		this._data = data.data;
 
 		await Promise.all(data.peers.map(peerId =>
 			new Promise<void>((res, rej) => {
@@ -133,36 +133,36 @@ export class Bridge<T = undefined> {
 			}),
 		));
 
-		this.#onJoin();
+		this._onJoin();
 
 		return data;
 	}
 
 	public leave() {
-		this.#peers.forEach(peer => peer.destroy());
-		this.#onLeave();
+		this._peers.forEach(peer => peer.destroy());
+		this._onLeave();
 	}
 
 	public onJoin(handler: SelfHandler) {
-		this.#onJoin = handler;
+		this._onJoin = handler;
 	}
 
 	public onLeave(handler: SelfHandler) {
-		this.#onLeave = handler;
+		this._onLeave = handler;
 	}
 
 	public onPeerJoin(handler: PeerHandler) {
-		this.#onPeerJoin = handler;
+		this._onPeerJoin = handler;
 	}
 
 	public onPeerLeave(handler: PeerHandler) {
-		this.#onPeerLeave = handler;
+		this._onPeerLeave = handler;
 	}
 
 	public makeAction<T>(name: string): ActionDuplex<T> {
 		return [
 			(data, ...peers) => this.sendData(name, data, peers),
-			(handler) => this.#actions.set(name, handler),
+			(handler) => this._actions.set(name, handler),
 		];
 	}
 }

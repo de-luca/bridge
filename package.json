@@ -1,6 +1,6 @@
 {
-  "name": "bridge",
-  "version": "0.1.0",
+  "name": "@planecha.se/bridge",
+  "version": "0.0.0",
   "main": "src/index.ts",
   "files": [
     "src/"

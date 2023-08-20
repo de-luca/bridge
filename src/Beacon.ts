@@ -55,19 +55,19 @@ export class TypedEventTarget<M extends ValueIsEvent<M>> extends EventTarget {
 }
 
 export class Beacon<T> extends TypedEventTarget<BeaconEventMap<T>> {
-	#ws: WebSocket;
+	private ws: WebSocket;
 
 	public constructor(url: string) {
 		super();
-		this.#ws = new WebSocket(url);
-		this.#ws.addEventListener('open', () => this.dispatchTypedEvent('open', null));
-		this.#ws.addEventListener('close', () => this.dispatchTypedEvent('close', null));
-		this.#ws.addEventListener('error', () => this.dispatchTypedEvent('error', 'SOCKET_ERROR'));
-		this.#ws.addEventListener('message', msg => this.emit(msg));
+		this.ws = new WebSocket(url);
+		this.ws.addEventListener('open', () => this.dispatchTypedEvent('open', null));
+		this.ws.addEventListener('close', () => this.dispatchTypedEvent('close', null));
+		this.ws.addEventListener('error', () => this.dispatchTypedEvent('error', 'SOCKET_ERROR'));
+		this.ws.addEventListener('message', msg => this.emit(msg));
 	}
 
 	public get connected(): boolean {
-		return this.#ws.readyState === WebSocket.OPEN;
+		return this.ws.readyState === WebSocket.OPEN;
 	}
 
 	public static isUp(url: string): Promise<boolean> {
@@ -102,7 +102,7 @@ export class Beacon<T> extends TypedEventTarget<BeaconEventMap<T>> {
 	}
 
 	private send(payload: Request<T>) {
-		this.#ws.send(JSON.stringify(payload));
+		this.ws.send(JSON.stringify(payload));
 	}
 
 	private emit(message: MessageEvent<string>) {

@@ -101,6 +101,10 @@ export class Beacon<T> extends TypedEventTarget<BeaconEventMap<T>> {
 		this.send({ method: "signal", params: { peer, data } });
 	}
 
+	public leave() {
+		this.ws.close();
+	}
+
 	private send(payload: Request<T>) {
 		this.ws.send(JSON.stringify(payload));
 	}

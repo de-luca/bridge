@@ -140,6 +140,7 @@ export class Bridge<T = undefined> {
 
 	public leave() {
 		this._peers.forEach(peer => peer.destroy());
+		this.beacon.leave();
 		this._onLeave();
 	}
 

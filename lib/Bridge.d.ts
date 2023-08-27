@@ -1,6 +1,7 @@
 import { Beacon } from "./Beacon";
 export type SelfHandler = () => void;
 export type PeerHandler = (peerId: string) => void;
+export type PeerStreamHandler = (peerId: string, stream: MediaStream) => void;
 export type ActionSender<T> = (data: T, ...peers: Array<string>) => void;
 export type ActionReceiver<T> = (data: T, peerId: string) => void;
 export type ActionReceiverSetter<T> = (handler: ActionReceiver<T>) => void;
@@ -11,10 +12,12 @@ export declare class Bridge<T = undefined> {
     private _you?;
     private _room?;
     private _data?;
+    private _stream?;
     private _peers;
     private _actions;
     private _onJoin;
     private _onLeave;
+    private _onPeerStream;
     private _onPeerJoin;
     private _onPeerLeave;
     constructor(beacon: Beacon<T>);
@@ -27,12 +30,13 @@ export declare class Bridge<T = undefined> {
     private handleSignal;
     private handleData;
     private sendData;
-    create(data: T): Promise<import("./response").CreatedData>;
+    create(data: T, stream?: MediaStream): Promise<import("./response").CreatedData>;
     getInfo(room: string): Promise<import("./response").InfoData<T>>;
-    join(room: string): Promise<import("./response").JoinedData<T>>;
+    join(room: string, stream?: MediaStream): Promise<import("./response").JoinedData<T>>;
     leave(): void;
     onJoin(handler: SelfHandler): void;
     onLeave(handler: SelfHandler): void;
+    onPeerStream(handler: PeerStreamHandler): void;
     onPeerJoin(handler: PeerHandler): void;
     onPeerLeave(handler: PeerHandler): void;
     makeAction<T>(name: string): ActionDuplex<T>;

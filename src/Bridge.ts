@@ -4,6 +4,7 @@ import Peer, { Instance } from 'simple-peer-light';
 
 export type SelfHandler = () => void;
 export type PeerHandler = (peerId: string) => void;
+export type PeerStreamHandler = (peerId: string, stream: MediaStream) => void;
 
 export type ActionSender<T> = (data: T, ...peers: Array<string>) => void;
 export type ActionReceiver<T> = (data: T, peerId: string) => void;
@@ -22,12 +23,14 @@ export class Bridge<T = undefined> {
 	private _you?: string;
 	private _room?: string;
 	private _data?: T;
+	private _stream?: MediaStream;
 
 	private _peers: Map<string, Instance> = new Map();
 	private _actions: Map<string, ActionReceiver<any>> = new Map();
 
 	private _onJoin: SelfHandler = () => {};
 	private _onLeave: SelfHandler = () => {};
+	private _onPeerStream: PeerStreamHandler = () => {};
 	private _onPeerJoin: PeerHandler = () => {};
 	private _onPeerLeave: PeerHandler = () => {};
 
@@ -72,7 +75,7 @@ export class Bridge<T = undefined> {
 	}
 
 	private addPeer(peerId: string, initiator: boolean): Instance {
-		const peer = new Peer({ initiator });
+		const peer = new Peer({ initiator, stream: this._stream });
 
 		peer.once('connect', () => this._onPeerJoin(peerId));
 		peer.once('error', () => this._peers.delete(peerId));
@@ -83,6 +86,7 @@ export class Bridge<T = undefined> {
 
 		peer.on('signal', data => this.beacon.signal(peerId, data));
 		peer.on('data', data => this.handleData(peerId, data));
+		peer.on('stream', stream => this._onPeerStream(peerId, stream));
 
 		this._peers.set(peerId, peer);
 
@@ -111,8 +115,9 @@ export class Bridge<T = undefined> {
 		});
 	}
 
-	public create(data: T) {
+	public create(data: T, stream?: MediaStream) {
 		this._data = data;
+		this._stream = stream;
 		return this.beacon.create(data);
 	}
 
@@ -120,10 +125,11 @@ export class Bridge<T = undefined> {
 		return this.beacon.getInfo(room);
 	}
 
-	public async join(room: string) {
+	public async join(room: string, stream?: MediaStream) {
 		const data = await this.beacon.join(room);
 		this._you = data.you;
 		this._data = data.data;
+		this._stream = stream;
 
 		await Promise.all(data.peers.map(peerId =>
 			new Promise<void>((res, rej) => {
@@ -150,6 +156,10 @@ export class Bridge<T = undefined> {
 
 	public onLeave(handler: SelfHandler) {
 		this._onLeave = handler;
+	}
+
+	public onPeerStream(handler: PeerStreamHandler) {
+		this._onPeerStream = handler;
 	}
 
 	public onPeerJoin(handler: PeerHandler) {
